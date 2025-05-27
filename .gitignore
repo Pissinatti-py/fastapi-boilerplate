@@ -1,0 +1,16 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.env
+*.venv
+venv/
+.env
+.env.*
+migrations/__pycache__/
+__pypackages__/
+.idea/
+.vscode/
+docker-compose.override.yml

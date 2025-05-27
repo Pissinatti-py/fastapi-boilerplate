@@ -1,0 +1,21 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic-settings==2.9.1
+
+# Banco de Dados
+sqlalchemy==2.0.41
+asyncpg==0.29.0  # Driver async para PostgreSQL
+
+# Alembic para migrations
+alembic==1.16.1
+
+# Gerenciamento de variáveis de ambiente
+python-dotenv==1.0.1
+
+# Validação extra (se desejar)
+pydantic[email]==2.7.1
+
+# Segurança (JWT)
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+
