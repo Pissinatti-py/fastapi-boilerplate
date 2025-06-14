@@ -4,6 +4,7 @@ pydantic-settings==2.9.1
 
 # Banco de Dados
 sqlalchemy==2.0.41
+psycopg2-binary==2.9.9
 asyncpg==0.29.0  # Driver async para PostgreSQL
 
 # Alembic para migrations
@@ -18,4 +19,4 @@ pydantic[email]==2.7.1
 # Segurança (JWT)
 python-jose==3.3.0
 passlib[bcrypt]==1.7.4
-
+bcrypt<4.1.0
