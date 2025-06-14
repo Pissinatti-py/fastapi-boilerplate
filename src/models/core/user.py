@@ -21,4 +21,7 @@ class User(Base):
     is_superuser = Column(Boolean, default=False, nullable=False)
 
     def __repr__(self):
-        return f"User(id={self.id}, username='{self.username}', email='{self.email}')"
+        return (
+            f"User(id={self.id}, username='{self.username}', "
+            f"email='{self.email}')"
+        )

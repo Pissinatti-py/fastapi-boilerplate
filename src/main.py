@@ -21,7 +21,8 @@ async def lifespan(app: FastAPI):
     :param app: The FastAPI application instance.
     :type app: FastAPI
 
-    :yield: Control back to the application runtime after startup tasks are completed.
+    :yield: Control back to the application runtime
+    after startup tasks are completed.
     :rtype: None
     """
     logger.info("🚀 Application is starting...")
