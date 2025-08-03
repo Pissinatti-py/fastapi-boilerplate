@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Main app variables
     APP_NAME: str = "FastAPI Project"
     APP_VERSION: str = "0.1.0"
-    API_PREFIX: str = "/api/v1"
+    API_PREFIX: str = "/api/v1.0"
     APP_ENV: str
     DEBUG: bool = Field(default=True)
 
