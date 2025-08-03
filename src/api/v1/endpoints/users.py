@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
+from typing import List
 
 from src.db.session import get_db_session
 from src.models.core.user import User
@@ -36,30 +37,44 @@ async def create_user(
     return await user_manager.create(db, user)
 
 
-@router.get("/", response_model=list[UserRead])
-async def list_users(db: AsyncSession = Depends(get_db_session)):
+@router.get("/", response_model=List[UserRead])
+async def list_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    active_only: bool = Query(True, description="Filter only active users"),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Retrieve a list of all users.
+    Retrieve a list of users with optional filtering.
+
+    Args:
+        skip: Number of records to skip (pagination)
+        limit: Maximum number of records to return
+        active_only: Filter only active users
+        db: Database session
     """
-    stmt = select(User)
-    result = await db.execute(stmt)
-    users = result.scalars().all()
-    return users
+    if active_only:
+        return await user_manager.get_active_users(db, skip, limit)
+
+    return await user_manager.get_multi(db, skip, limit)
 
 
 @router.get("/{user_id}", response_model=UserRead)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
+async def get_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Retrieve a user by ID using SQLAlchemy select.
+    Retrieve a user by ID.
     """
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    user = await user_manager.get_by_id(db, user_id)
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
+
     return user
 
 
@@ -70,21 +85,63 @@ async def update_user(
     db: AsyncSession = Depends(get_db_session),
 ):
     """
-    Update a user by ID using SQLAlchemy update.
+    Update a user by ID.
     """
-    stmt = (
-        update(User)
-        .where(User.id == user_id)
-        .values(**user_update.dict())
-        .returning(User)
-    )
-    result = await db.execute(stmt)
-    await db.commit()
-    updated_user = result.fetchone()
+    existing_user = await user_manager.get_by_id(db, user_id)
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
 
-    if updated_user:
-        return UserRead.model_validate(updated_user._mapping)
-    raise HTTPException(status_code=404, detail="User not found")
+    if user_update.email != existing_user.email:
+        if await user_manager.exists_by_field(db, "email", user_update.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email '{user_update.email}' is already registered.",
+            )
+
+    if user_update.username != existing_user.username:
+        if await user_manager.exists_by_field(
+            db,
+            "username",
+            user_update.username
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Username '{user_update.username}' is already registered."
+                ),
+            )
+
+    updated_user = await user_manager.update(db, user_id, user_update)
+
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return updated_user
+
+
+@router.patch("/{user_id}/deactivate", response_model=UserRead)
+async def deactivate_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """
+    Deactivate a user instead of deleting.
+    """
+    user = await user_manager.deactivate_user(db, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return user
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -93,14 +150,12 @@ async def delete_user(
     db: AsyncSession = Depends(get_db_session),
 ):
     """
-    Delete a user by ID using SQLAlchemy delete.
+    Delete a user by ID.
     """
-    stmt = delete(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    await db.commit()
+    deleted = await user_manager.delete(db, user_id)
 
-    if result.rowcount == 0:
+    if not deleted:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
-    return
