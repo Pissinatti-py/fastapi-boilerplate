@@ -381,3 +381,20 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             select(self.model.id).where(field == field_value)
         )
         return result.scalar_one_or_none() is not None
+
+    async def get_by_id(
+        self,
+        db: AsyncSession,
+        id: Any
+    ) -> Optional[ModelType]:
+        """
+        Alias for get method to retrieve by ID.
+
+        Args:
+            db: Database session
+            id: ID of the instance to retrieve
+
+        Returns:
+            The model instance if found, None otherwise
+        """
+        return await self.get(db, id)

@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -83,6 +84,14 @@ class UserManager(BaseManager[User, UserCreate, UserRead]):
         user_id: int
     ) -> Optional[User]:
         """Deactivate a user instead of deleting."""
+        user = await self.get_multi(db, filters={"id": user_id})
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
         return await self.update(db, user_id, {"is_active": False})
 
     async def activate_user(

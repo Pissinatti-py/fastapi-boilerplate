@@ -1,10 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
 from typing import List
 
 from src.db.session import get_db_session
-from src.models.core.user import User
 from src.schemas.core.user import UserCreate, UserRead
 from src.db.utils.models.user_manager import user_manager
 
@@ -79,6 +77,7 @@ async def get_user(
 
 
 @router.put("/{user_id}", response_model=UserRead)
+@router.patch("/{user_id}", response_model=UserRead)
 async def update_user(
     user_id: int,
     user_update: UserCreate,
@@ -88,6 +87,7 @@ async def update_user(
     Update a user by ID.
     """
     existing_user = await user_manager.get_by_id(db, user_id)
+
     if not existing_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -125,7 +125,7 @@ async def update_user(
     return updated_user
 
 
-@router.patch("/{user_id}/deactivate", response_model=UserRead)
+@router.delete("/{user_id}/")
 async def deactivate_user(
     user_id: int,
     db: AsyncSession = Depends(get_db_session)
@@ -141,21 +141,4 @@ async def deactivate_user(
             detail="User not found"
         )
 
-    return user
-
-
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
-    user_id: int,
-    db: AsyncSession = Depends(get_db_session),
-):
-    """
-    Delete a user by ID.
-    """
-    deleted = await user_manager.delete(db, user_id)
-
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
