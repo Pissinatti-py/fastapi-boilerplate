@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from src.core.settings import settings
 from src.api.v1.router import api_router
+from src.api.v1.endpoints.auth import router as auth_router
 from src.db.session import run_migrations_sync
 from src.services.logger_service import logger
 
@@ -67,6 +68,11 @@ def get_application() -> FastAPI:
 
     # Include API routes
     app.include_router(api_router, prefix=settings.API_PREFIX)
+    app.include_router(
+        auth_router,
+        prefix="/api/auth",
+        tags=["Authentication"],
+    )
 
     return app
 
