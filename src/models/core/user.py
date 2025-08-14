@@ -21,7 +21,28 @@ class User(Base):
     is_superuser = Column(Boolean, default=False, nullable=False)
 
     def __repr__(self):
+        """
+        Return a string representation of the User instance.
+
+        :return: String representation of the User instance.
+        :rtype: str
+        """
         return (
             f"User(id={self.id}, username='{self.username}', "
             f"email='{self.email}')"
         )
+
+    def check_password(self, password: str) -> bool:
+        """
+        Return a boolean of whether the password was correct.
+        Handles hashing formats behind the scenes.
+
+        Args:
+            password: The raw password to check
+
+        Returns:
+            True if the password matches, False otherwise
+        """
+        from src.utils.security.hashers import check_password
+
+        return check_password(password, self.hashed_password)

@@ -53,9 +53,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     async def create(
-        self,
-        db: AsyncSession,
-        obj_in: Union[CreateSchemaType, Dict[str, Any]]
+        self, db: AsyncSession, obj_in: Union[CreateSchemaType, Dict[str, Any]]
     ) -> ModelType:
         """
         Create a new instance of the model.
@@ -92,16 +90,11 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             The model instance if found, None otherwise
         """
-        result = await db.execute(
-            select(self.model).where(self.model.id == id)
-        )
+        result = await db.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
     async def get_by_field(
-        self,
-        db: AsyncSession,
-        field_name: str,
-        field_value: Any
+        self, db: AsyncSession, field_name: str, field_value: Any
     ) -> Optional[ModelType]:
         """
         Get a single instance by a specific field.
@@ -123,9 +116,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
 
         field = getattr(self.model, field_name)
-        result = await db.execute(
-            select(self.model).where(field == field_value)
-        )
+        result = await db.execute(select(self.model).where(field == field_value))
         return result.scalar_one_or_none()
 
     async def get_multi(
@@ -134,7 +125,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         skip: int = 0,
         limit: int = 100,
         filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[str] = None
+        order_by: Optional[str] = None,
     ) -> List[ModelType]:
         """
         Get multiple instances with pagination and filtering.
@@ -163,7 +154,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         # Apply ordering
         if order_by:
-            if order_by.startswith('-'):
+            if order_by.startswith("-"):
                 # Descending order
                 field_name = order_by[1:]
                 if hasattr(self.model, field_name):
@@ -182,9 +173,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return result.scalars().all()
 
     async def count(
-        self,
-        db: AsyncSession,
-        filters: Optional[Dict[str, Any]] = None
+        self, db: AsyncSession, filters: Optional[Dict[str, Any]] = None
     ) -> int:
         """
         Count instances with optional filtering.
@@ -214,10 +203,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return result.scalar()
 
     async def update(
-        self,
-        db: AsyncSession,
-        id: Any,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        self, db: AsyncSession, id: Any, obj_in: Union[UpdateSchemaType, Dict[str, Any]]
     ) -> Optional[ModelType]:
         """
         Update an existing instance.
@@ -254,7 +240,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         db: AsyncSession,
         filters: Dict[str, Any],
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> int:
         """
         Update multiple instances that match the filters.
@@ -308,11 +294,7 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db.commit()
         return True
 
-    async def delete_bulk(
-        self,
-        db: AsyncSession,
-        filters: Dict[str, Any]
-    ) -> int:
+    async def delete_bulk(self, db: AsyncSession, filters: Dict[str, Any]) -> int:
         """
         Delete multiple instances that match the filters.
 
@@ -346,16 +328,11 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             True if the instance exists, False otherwise
         """
-        result = await db.execute(
-            select(self.model.id).where(self.model.id == id)
-        )
+        result = await db.execute(select(self.model.id).where(self.model.id == id))
         return result.scalar_one_or_none() is not None
 
     async def exists_by_field(
-        self,
-        db: AsyncSession,
-        field_name: str,
-        field_value: Any
+        self, db: AsyncSession, field_name: str, field_value: Any
     ) -> bool:
         """
         Check if an instance exists by a specific field.
@@ -377,16 +354,10 @@ class BaseManager(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
 
         field = getattr(self.model, field_name)
-        result = await db.execute(
-            select(self.model.id).where(field == field_value)
-        )
+        result = await db.execute(select(self.model.id).where(field == field_value))
         return result.scalar_one_or_none() is not None
 
-    async def get_by_id(
-        self,
-        db: AsyncSession,
-        id: Any
-    ) -> Optional[ModelType]:
+    async def get_by_id(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
         """
         Alias for get method to retrieve by ID.
 

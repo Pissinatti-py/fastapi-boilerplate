@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from src.db.session import get_db_session
-from src.schemas.core.user import UserCreate, UserRead
+from src.schemas.core.user import UserCreate, UserRead, UserUpdate
 from src.db.utils.models.user_manager import user_manager
 
 
@@ -21,14 +21,14 @@ async def create_user(
     if await user_manager.exists_by_field(db, "email", user.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Email '{user.email}' is already registered.",
+            detail="Email or Username is already registered.",
         )
 
     # Check if username already exists
     if await user_manager.exists_by_field(db, "username", user.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Username '{user.username}' is already registered.",
+            detail="Email or Username is already registered.",
         )
 
     # Create user using manager
@@ -40,7 +40,7 @@ async def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     active_only: bool = Query(True, description="Filter only active users"),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Retrieve a list of users with optional filtering.
@@ -57,11 +57,8 @@ async def list_users(
     return await user_manager.get_multi(db, skip, limit)
 
 
-@router.get("/{user_id}", response_model=UserRead)
-async def get_user(
-    user_id: int,
-    db: AsyncSession = Depends(get_db_session)
-):
+@router.get("/{user_id}/", response_model=UserRead)
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
     """
     Retrieve a user by ID.
     """
@@ -69,8 +66,7 @@ async def get_user(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     return user
@@ -80,7 +76,7 @@ async def get_user(
 @router.patch("/{user_id}", response_model=UserRead)
 async def update_user(
     user_id: int,
-    user_update: UserCreate,
+    user_update: UserUpdate,
     db: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -90,8 +86,7 @@ async def update_user(
 
     if not existing_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     if user_update.email != existing_user.email:
@@ -102,34 +97,24 @@ async def update_user(
             )
 
     if user_update.username != existing_user.username:
-        if await user_manager.exists_by_field(
-            db,
-            "username",
-            user_update.username
-        ):
+        if await user_manager.exists_by_field(db, "username", user_update.username):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"Username '{user_update.username}' is already registered."
-                ),
+                detail=(f"Username '{user_update.username}' is already registered."),
             )
 
     updated_user = await user_manager.update(db, user_id, user_update)
 
     if not updated_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     return updated_user
 
 
 @router.delete("/{user_id}/")
-async def deactivate_user(
-    user_id: int,
-    db: AsyncSession = Depends(get_db_session)
-):
+async def deactivate_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
     """
     Deactivate a user instead of deleting.
     """
@@ -137,8 +122,7 @@ async def deactivate_user(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
