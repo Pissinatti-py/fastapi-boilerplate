@@ -1,6 +1,7 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
 pydantic-settings==2.9.1
+requests==2.32.4
 
 # Banco de Dados
 sqlalchemy==2.0.41
