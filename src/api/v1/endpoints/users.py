@@ -9,11 +9,18 @@ from src.db.utils.models.user_manager import user_manager
 
 router = APIRouter()
 
+DEFAULT_DB_SESSION = Depends(get_db_session)
+DEFAULT_SKIP = Query(0, ge=0)
+DEFAULT_LIMIT = Query(100, ge=1, le=1000)
+DEFAULT_ACTIVE_ONLY = Query(True, description="Filter only active users")
+USER_NOT_FOUND = "User not found"
+USER_ALREADY_EXISTS = "Email or Username is already registered."
+
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user: UserCreate,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = DEFAULT_DB_SESSION,
 ):
     """
     Create a new user with validation for unique email and username.
@@ -21,14 +28,14 @@ async def create_user(
     if await user_manager.exists_by_field(db, "email", user.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or Username is already registered.",
+            detail=USER_ALREADY_EXISTS,
         )
 
     # Check if username already exists
     if await user_manager.exists_by_field(db, "username", user.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or Username is already registered.",
+            detail=USER_ALREADY_EXISTS,
         )
 
     # Create user using manager
@@ -37,10 +44,10 @@ async def create_user(
 
 @router.get("/", response_model=List[UserRead])
 async def list_users(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    active_only: bool = Query(True, description="Filter only active users"),
-    db: AsyncSession = Depends(get_db_session),
+    skip: int = DEFAULT_SKIP,
+    limit: int = DEFAULT_LIMIT,
+    active_only: bool = DEFAULT_ACTIVE_ONLY,
+    db: AsyncSession = DEFAULT_DB_SESSION,
 ):
     """
     Retrieve a list of users with optional filtering.
@@ -58,7 +65,7 @@ async def list_users(
 
 
 @router.get("/{user_id}/", response_model=UserRead)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
+async def get_user(user_id: int, db: AsyncSession = DEFAULT_DB_SESSION):
     """
     Retrieve a user by ID.
     """
@@ -66,7 +73,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
 
     return user
@@ -77,7 +84,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
 async def update_user(
     user_id: int,
     user_update: UserUpdate,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = DEFAULT_DB_SESSION,
 ):
     """
     Update a user by ID.
@@ -86,35 +93,37 @@ async def update_user(
 
     if not existing_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
+
+    conflicts = []
 
     if user_update.email != existing_user.email:
         if await user_manager.exists_by_field(db, "email", user_update.email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Email '{user_update.email}' is already registered.",
-            )
+            conflicts.append(USER_ALREADY_EXISTS)
 
     if user_update.username != existing_user.username:
         if await user_manager.exists_by_field(db, "username", user_update.username):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(f"Username '{user_update.username}' is already registered."),
-            )
+            conflicts.append(USER_ALREADY_EXISTS)
+
+    if conflicts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=" ".join(conflicts[-1:]),
+        )
 
     updated_user = await user_manager.update(db, user_id, user_update)
 
     if not updated_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
 
     return updated_user
 
 
 @router.delete("/{user_id}/")
-async def deactivate_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
+async def deactivate_user(user_id: int, db: AsyncSession = DEFAULT_DB_SESSION):
     """
     Deactivate a user instead of deleting.
     """
@@ -122,7 +131,7 @@ async def deactivate_user(user_id: int, db: AsyncSession = Depends(get_db_sessio
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

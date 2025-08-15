@@ -1,14 +1,15 @@
 import logging
 import sys
+from types import MappingProxyType
 
 # ANSI escape codes for colors
-LOG_COLORS = {
+LOG_COLORS = MappingProxyType({
     "DEBUG": "\033[34m",  # Blue
     "INFO": "\033[32m",  # Green
     "WARNING": "\033[33m",  # Yellow
     "ERROR": "\033[31m",  # Red
     "CRITICAL": "\033[1;31m",  # Bright Red
-}
+})
 RESET_COLOR = "\033[0m"
 
 
@@ -29,7 +30,6 @@ def get_logger(name: str = "fastapi_app") -> logging.Logger:
     """
     Returns a configured logger instance.
     """
-
     logger = logging.getLogger(name)
 
     if logger.hasHandlers():

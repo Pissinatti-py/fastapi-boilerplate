@@ -11,11 +11,14 @@ from src.db.utils.models.user_manager import user_manager
 
 router = APIRouter()
 
+DEFAULT_DB_SESSION = Depends(get_db_session)
+DEFAULT_AUTHORIZATION_HEADER = Header(None)
+
 
 @router.post("/login/")
 async def login(
     credentials: LoginRequest,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = DEFAULT_DB_SESSION,
 ):
     user = await user_manager.get_by_field(
         db, "username", credentials.username
@@ -57,17 +60,25 @@ async def login(
 
 @router.get("/check-token/")
 async def check_token(
-    db: AsyncSession = Depends(get_db_session),
-    authorization: str = Header(None)
+    authorization: str = DEFAULT_AUTHORIZATION_HEADER
 ):
     """
     Endpoint to check if the token is valid.
     This is a placeholder implementation.
     """
-    # For now, return True (placeholder implementation)
-    print(f"Authorization header: {authorization}")
     auth_service = AuthenticationService()
-    response = auth_service.verify_token(authorization)
-    print(f"Token verification response: {response}")
 
-    return {"valid": True}
+    try:
+        return auth_service.verify_token(authorization)
+
+    except ValueError as auth_exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(auth_exception)
+        )
+
+    except Exception as unexpected_exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred {str(unexpected_exception)}"
+        )

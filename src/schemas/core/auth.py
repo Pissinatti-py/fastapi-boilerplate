@@ -3,6 +3,10 @@ from typing import Annotated
 
 from src.services.users.validators import validate_username, validate_password
 
+# Field length constants
+MAX_USERNAME_LENGTH = 50
+MAX_PASSWORD_LENGTH = 128
+
 
 class LoginRequest(BaseModel):
     """
@@ -16,7 +20,7 @@ class LoginRequest(BaseModel):
         str,
         Field(
             min_length=3,
-            max_length=50,
+            max_length=MAX_USERNAME_LENGTH,
             description="Username must be between 3 and 50 characters",
             examples=["john_doe", "user123", "alice.smith"],
         ),
@@ -26,7 +30,7 @@ class LoginRequest(BaseModel):
         str,
         Field(
             min_length=8,
-            max_length=128,
+            max_length=MAX_PASSWORD_LENGTH,
             description="Password must be between 8 and 128 characters",
             examples=["MySecureP@ss123"],
         ),
@@ -34,7 +38,7 @@ class LoginRequest(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, value: str) -> str:
+    def validate_username(cls, username_value: str) -> str:
         """
         Validate username format and content.
 
@@ -46,7 +50,7 @@ class LoginRequest(BaseModel):
         - Cannot contain consecutive special characters
 
         Args:
-            v: Username string to validate
+            username_value: Username string to validate
 
         Returns:
             str: Validated and stripped username
@@ -54,11 +58,11 @@ class LoginRequest(BaseModel):
         Raises:
             ValueError: If username doesn't meet validation criteria
         """
-        return validate_username(value)
+        return validate_username(username_value)
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, value: str) -> str:
+    def validate_password(cls, password_value: str) -> str:
         """
         Validate password strength and format.
 
@@ -72,7 +76,7 @@ class LoginRequest(BaseModel):
         - Cannot be entirely numeric
 
         Args:
-            v: Password string to validate
+            password_value: Password string to validate
 
         Returns:
             str: Validated password
@@ -80,7 +84,7 @@ class LoginRequest(BaseModel):
         Raises:
             ValueError: If password doesn't meet security criteria
         """
-        return validate_password(value)
+        return validate_password(password_value)
 
     class Config:
         """Pydantic configuration."""

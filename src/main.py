@@ -27,7 +27,6 @@ async def lifespan(app: FastAPI):
     :rtype: None
     """
     logger.info("🚀 Application is starting...")
-
     await asyncio.to_thread(run_migrations_sync)
 
     yield

@@ -5,6 +5,13 @@ from enum import Enum
 
 from src.core.settings import settings
 
+DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 15
+DEFAULT_REFRESH_TOKEN_EXPIRE_DAYS = 7
+TOKEN_TYPE_KEY = "token_type"
+SUB_KEY = "sub"
+USER_ID_KEY = "user_id"
+TOKEN_FAMILY_KEY = "token_family"
+
 
 class TokenType(str, Enum):
     """Enum for different token types."""
@@ -63,26 +70,26 @@ class AuthenticationService:
         self.secret_key = settings.SECRET_KEY
         self.algorithm = settings.ALGORITHM
         self.access_token_expire_minutes = getattr(
-            settings, "ACCESS_TOKEN_EXPIRE_MINUTES", 15
+            settings, "ACCESS_TOKEN_EXPIRE_MINUTES", DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES
         )
         self.refresh_token_expire_days = getattr(
-            settings, "REFRESH_TOKEN_EXPIRE_DAYS", 7
+            settings, "REFRESH_TOKEN_EXPIRE_DAYS", DEFAULT_REFRESH_TOKEN_EXPIRE_DAYS
         )
 
     def create_access_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
+        self, claims: dict, expires_delta: Optional[timedelta] = None
     ) -> str:
         """
         Create a JWT access token with an expiration time.
 
         Args:
-            data: Data to encode in the token
+            claims: Data to encode in the token
             expires_delta: Optional expiration time delta
 
         Returns:
             str: Encoded JWT access token
         """
-        to_encode = data.copy()
+        payload = claims.copy()
 
         if expires_delta:
             expire = datetime.now(tz=timezone.utc) + expires_delta
@@ -92,30 +99,30 @@ class AuthenticationService:
             )
 
         # Add token type and expiration
-        to_encode.update(
+        payload.update(
             {
                 "exp": expire,
-                "token_type": TokenType.ACCESS.value,
+                TOKEN_TYPE_KEY: TokenType.ACCESS.value,
                 "iat": datetime.now(tz=timezone.utc),  # Issued at
             }
         )
 
-        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
     def create_refresh_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
+        self, claims: dict, expires_delta: Optional[timedelta] = None
     ) -> str:
         """
         Create a JWT refresh token with a longer expiration time.
 
         Args:
-            data: Data to encode in the token (usually minimal user info)
+            claims: Data to encode in the token (usually minimal user info)
             expires_delta: Optional expiration time delta
 
         Returns:
             str: Encoded JWT refresh token
         """
-        to_encode = data.copy()
+        payload = claims.copy()
 
         if expires_delta:
             expire = datetime.now(tz=timezone.utc) + expires_delta
@@ -125,15 +132,15 @@ class AuthenticationService:
             )
 
         # Add token type and expiration
-        to_encode.update(
+        payload.update(
             {
                 "exp": expire,
-                "token_type": TokenType.REFRESH.value,
+                TOKEN_TYPE_KEY: TokenType.REFRESH.value,
                 "iat": datetime.now(tz=timezone.utc),  # Issued at
             }
         )
 
-        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
     def create_token_pair(
         self,
@@ -153,33 +160,25 @@ class AuthenticationService:
             TokenPair: Object containing both tokens and metadata
         """
         # Create access token with full user data
-        access_token = self.create_access_token(
-            user_data, access_expires_delta
-        )
+        access_token = self.create_access_token(user_data, access_expires_delta)
 
         # Create refresh token with minimal data (security best practice)
         refresh_data = {
-            "sub": user_data.get("sub"),
-            "user_id": user_data.get("user_id"),
-            "token_family": user_data.get(
-                "token_family", "default"
+            SUB_KEY: user_data.get(SUB_KEY),
+            USER_ID_KEY: user_data.get(USER_ID_KEY),
+            TOKEN_FAMILY_KEY: user_data.get(
+                TOKEN_FAMILY_KEY, "default"
             ),  # For token rotation
         }
 
-        refresh_token = self.create_refresh_token(
-            refresh_data, refresh_expires_delta
-        )
+        refresh_token = self.create_refresh_token(refresh_data, refresh_expires_delta)
 
         # Calculate expiration times in seconds
         access_expires_in = (
-            access_expires_delta or timedelta(
-                minutes=self.access_token_expire_minutes
-            )
+            access_expires_delta or timedelta(minutes=self.access_token_expire_minutes)
         ).total_seconds()
         refresh_expires_in = (
-            refresh_expires_delta or timedelta(
-                days=self.refresh_token_expire_days
-            )
+            refresh_expires_delta or timedelta(days=self.refresh_token_expire_days)
         ).total_seconds()
 
         return TokenPair(
@@ -188,6 +187,24 @@ class AuthenticationService:
             expires_in=int(access_expires_in),
             refresh_expires_in=int(refresh_expires_in),
         )
+
+    def normalize_bearer_token(self, token: str) -> str:
+        """
+        Normalize a Bearer token string to ensure it has the correct format.
+
+        Args:
+            token: Raw token string
+
+        Returns:
+            str: Normalized token string without 'Bearer ' prefix
+        """
+        if not token:
+            raise ValueError("Token cannot be empty")
+
+        if token.startswith("Bearer "):
+            return token[7:].strip()
+
+        return token.strip()
 
     def verify_token(
         self, token: str, expected_type: Optional[TokenType] = None
@@ -206,34 +223,24 @@ class AuthenticationService:
             ValueError: If token verification fails or type mismatch
 
         """
-        # TODO token type check method / Bearer format
+        if " " in token:
+            token = self.normalize_bearer_token(token)
+
         try:
-            token = token.split(" ")[1] if " " in token else token
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+        except JWTError as err:
+            raise ValueError(f"Token verification failed: {str(err)}")
 
-            payload = jwt.decode(
-                token,
-                self.secret_key,
-                algorithms=[self.algorithm]
-            )
+        if expected_type:
+            token_type = payload.get(TOKEN_TYPE_KEY)
+            if token_type != expected_type.value:
+                msg = (
+                    "Invalid token type. Expected %s, got %s"
+                    % (expected_type.value, token_type)
+                )
+                raise ValueError(msg)
 
-            if expected_type:
-                token_type = payload.get("token_type")
-
-                if token_type != expected_type.value:
-                    raise ValueError(
-                        f"Invalid token type. Expected {expected_type.value}, "
-                        f"got {token_type}"
-                    )
-
-            return payload
-
-        except IndexError:
-            raise ValueError(
-                "Invalid token format. Expected 'Bearer <token>' format."
-            )
-
-        except JWTError as e:
-            raise ValueError(f"Token verification failed: {str(e)}")
+        return payload
 
     def refresh_access_token(
         self, refresh_token: str, additional_data: Optional[dict] = None
@@ -258,9 +265,9 @@ class AuthenticationService:
             raise ValueError("Invalid or expired refresh token")
 
         user_data = {
-            "sub": payload.get("sub"),
-            "user_id": payload.get("user_id"),
-            "token_family": payload.get("token_family", "default"),
+            SUB_KEY: payload.get(SUB_KEY),
+            USER_ID_KEY: payload.get(USER_ID_KEY),
+            TOKEN_FAMILY_KEY: payload.get(TOKEN_FAMILY_KEY, "default"),
         }
 
         if additional_data:
@@ -283,9 +290,7 @@ class AuthenticationService:
 
         """
         try:
-            payload = self.verify_token(token, token_type)
-            return payload
-
+            return self.verify_token(token, token_type)
         except ValueError:
             return None
 
