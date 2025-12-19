@@ -1,6 +1,5 @@
 from pydantic import ConfigDict, BaseModel, EmailStr, Field, field_validator
 from typing import Annotated
-import re
 
 from src.services.users.validators import (
     validate_username,
