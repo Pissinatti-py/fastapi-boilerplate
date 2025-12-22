@@ -1,8 +1,15 @@
 services:
+  quotation-service:
+    image: mostela/desafiocotacoes
+    container_name: quotation_service
+    ports:
+      - "3000:3000"
+    networks:
+      - quotation-network
+
   web:
     build: .
-    container_name: fastapi_app
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    container_name: quotation_app
     ports:
       - "8000:8000"
     env_file:
@@ -10,26 +17,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
+      - quotation-service
     networks:
-      - fastapi-network
-
-  db:
-    image: postgres:16
-    container_name: postgres_db
-    restart: on-failure
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - fastapi-network
-
-volumes:
-  postgres_data:
+      - quotation-network
 
 networks:
-  fastapi-network:
+  quotation-network:
     driver: bridge

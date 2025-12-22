@@ -1,9 +1,10 @@
-from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+
+from pydantic import BaseModel
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import update, delete
-from pydantic import BaseModel
 
 # Type variables for generic typing
 ModelType = TypeVar("ModelType", bound=DeclarativeBase)

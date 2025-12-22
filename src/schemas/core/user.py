@@ -1,10 +1,11 @@
-from pydantic import ConfigDict, BaseModel, EmailStr, Field, field_validator
 from typing import Annotated
 
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
 from src.services.users.validators import (
-    validate_username,
     validate_name,
     validate_password,
+    validate_username,
 )
 
 

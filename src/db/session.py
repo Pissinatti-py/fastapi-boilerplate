@@ -1,16 +1,11 @@
 from alembic import command
 from alembic.config import Config
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    async_sessionmaker,
-)
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.core.settings import settings
 from src.db.base import Base
 from src.services.logger_service import logger
-
 
 DATABASE_URL = settings.DATABASE_URL
 

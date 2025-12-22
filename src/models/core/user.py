@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Boolean, Column, Integer, String
+
 from src.db.base import Base
 
 
@@ -28,8 +29,7 @@ class User(Base):
         :rtype: str
         """
         return (
-            f"User(id={self.id}, username='{self.username}', "
-            f"email='{self.email}')"
+            f"User(id={self.id}, username='{self.username}', " f"email='{self.email}')"
         )
 
     def check_password(self, password: str) -> bool:

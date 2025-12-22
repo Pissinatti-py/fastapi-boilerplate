@@ -1,13 +1,13 @@
 import os
 import sys
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from src.db.base import Base
 from src.core.settings import settings
+from src.db.base import Base
 
 # Bring new models here
 # ====================================

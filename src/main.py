@@ -1,11 +1,11 @@
 import asyncio
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from src.core.settings import settings
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from src.api.v1.router import api_router
-from src.db.session import run_migrations_sync
+from src.core.settings import settings
 from src.services.logger_service import logger
 
 
@@ -15,8 +15,7 @@ async def lifespan(app: FastAPI):
     Manages the application lifecycle.
 
     This function is called when the application starts and stops.
-    It runs database migrations synchronously in a background thread
-    at startup and handles cleanup operations on shutdown.
+    It initializes services at startup and handles cleanup on shutdown.
 
     :param app: The FastAPI application instance.
     :type app: FastAPI
@@ -26,8 +25,7 @@ async def lifespan(app: FastAPI):
     :rtype: None
     """
     logger.info("🚀 Application is starting...")
-
-    await asyncio.to_thread(run_migrations_sync)
+    logger.info(f"📊 Quotation Service URL: {settings.COTACAO_SERVICE_URL}")
 
     yield
 
