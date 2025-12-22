@@ -8,7 +8,6 @@ __pycache__/
 *.venv
 venv/
 .env
-.env.*
 migrations/__pycache__/
 __pypackages__/
 .idea/
