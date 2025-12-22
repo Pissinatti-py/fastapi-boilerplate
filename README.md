@@ -81,7 +81,7 @@ cd fastapi-boilerplate
 cp .env.example .env
 
 # 3. Suba a aplicação junto com o serviço de cotações
-docker-compose up --build
+docker compose up --build
 ```
 
 O `docker-compose` irá iniciar:
