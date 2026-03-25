@@ -8,8 +8,8 @@ from fastapi_users.authentication import (
 )
 
 from src.core.settings import settings
+from src.db.managers.models.user_auth_manager import get_user_auth_manager
 from src.models.core.user import User
-from src.services.users.manager import get_user_manager
 
 bearer_transport = BearerTransport(tokenUrl="api/auth/login")
 
@@ -27,6 +27,6 @@ auth_backend = AuthenticationBackend(
     get_strategy=get_jwt_strategy,
 )
 
-fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
+fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_auth_manager, [auth_backend])
 
 current_active_user = fastapi_users.current_user(active=True)

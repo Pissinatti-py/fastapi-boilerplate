@@ -12,7 +12,6 @@ from src.models.core.user import User
 
 
 class ExtendedSQLAlchemyUserDatabase(SQLAlchemyUserDatabase[User, uuid.UUID]):
-
     async def get_by_username(self, username: str) -> Optional[UP]:
         """
         Retrieve user by username.
