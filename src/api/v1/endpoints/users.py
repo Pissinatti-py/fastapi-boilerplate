@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +41,7 @@ async def list_users(
 
 
 @router.get("/{user_id}/", response_model=UserRead)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
+async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db_session)):
     """
     Retrieve a user by ID.
     """
@@ -58,7 +59,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
 @router.put("/{user_id}", response_model=UserRead)
 @router.patch("/{user_id}", response_model=UserRead)
 async def update_user(
-    user_id: int,
+    user_id: UUID,
     user_update: UserUpdate,
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -98,7 +99,7 @@ async def update_user(
 
 
 @router.delete("/{user_id}/")
-async def deactivate_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
+async def deactivate_user(user_id: UUID, db: AsyncSession = Depends(get_db_session)):
     """
     Deactivate a user instead of deleting.
     """
