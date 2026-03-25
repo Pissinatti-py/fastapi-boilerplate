@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import current_active_user
+from src.db.managers.models.user_manager import UserRepository
 from src.db.session import get_db_session
-from src.db.managers.models.user_manager import user_manager
 from src.schemas.core.user import UserRead, UserUpdate
 
 router = APIRouter()
@@ -17,7 +17,6 @@ async def list_users(
     limit: int = Query(100, ge=1, le=1000),
     active_only: bool = Query(True, description="Filter only active users"),
     db: AsyncSession = Depends(get_db_session),
-    _current_user=Depends(current_active_user),
 ):
     """
     List users with pagination and optional filtering for active users.
@@ -33,6 +32,8 @@ async def list_users(
     :return: List of users matching the criteria
     :rtype: List[UserRead]
     """
+    user_manager = UserRepository()
+
     if active_only:
         return await user_manager.get_active_users(db, skip, limit)
 
@@ -44,6 +45,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db_session)):
     """
     Retrieve a user by ID.
     """
+    user_manager = UserRepository()
     user = await user_manager.get_by_id(db, user_id)
 
     if not user:
@@ -64,6 +66,7 @@ async def update_user(
     """
     Update a user by ID.
     """
+    user_manager = UserRepository()
     existing_user = await user_manager.get_by_id(db, user_id)
 
     if not existing_user:
@@ -100,6 +103,7 @@ async def deactivate_user(user_id: int, db: AsyncSession = Depends(get_db_sessio
     """
     Deactivate a user instead of deleting.
     """
+    user_manager = UserRepository()
     user = await user_manager.deactivate_user(db, user_id)
 
     if not user:

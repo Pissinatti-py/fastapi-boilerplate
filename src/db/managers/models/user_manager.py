@@ -8,15 +8,18 @@ from src.models.core.user import User  # noqa: model-only import
 from src.schemas.core.user import UserCreate, UserRead
 
 
-class UserManager(BaseManager[User, UserCreate, UserRead]):
+class UserRepository(BaseManager[User, UserCreate, UserRead]):
     """
-    User-specific CRUD manager with additional methods.
+    User-specific CRUD repository with additional methods.
 
     Extends the base BaseManager with user-specific operations.
     """
 
     def __init__(self):
-        super().__init__(User)
+        """
+        Initialize the UserRepository with the User model.d
+        """
+        super().__init__(model=User)
 
     async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
         """Get user by email address."""
@@ -50,7 +53,3 @@ class UserManager(BaseManager[User, UserCreate, UserRead]):
     async def activate_user(self, db: AsyncSession, user_id: int) -> Optional[User]:
         """Activate a user."""
         return await self.update(db, user_id, {"is_active": True})
-
-
-# Create a global instance to use throughout the application
-user_manager = UserManager()
