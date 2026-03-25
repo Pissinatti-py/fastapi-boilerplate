@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1.endpoints.auth import auth_router
 from src.api.v1.router import api_router
 from src.core.settings import settings
+from src.middlewares.rate_limit_middleware import RateLimitMiddleware
 from src.services.logger_service import logger
 
 
@@ -61,6 +62,14 @@ def get_application() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+    # Rate Limit
+    app.add_middleware(
+        RateLimitMiddleware,
+        redis_url=settings.REDIS_URL,
+        max_requests=settings.RATE_LIMIT_MAX_REQUESTS,
+        window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS,
     )
 
     # Include API routes

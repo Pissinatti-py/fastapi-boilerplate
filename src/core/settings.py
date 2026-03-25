@@ -32,5 +32,14 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: str = ["*"]
 
+    # Redis
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_URL: str = "redis://redis:6379/0"
+
+    # Rate Limit
+    RATE_LIMIT_MAX_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+
 
 settings = Settings()
