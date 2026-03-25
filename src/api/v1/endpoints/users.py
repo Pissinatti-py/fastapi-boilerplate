@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.managers.models.user_manager import UserRepository
 from src.db.session import get_db_session
 from src.schemas.core.user import UserRead, UserUpdate
+from src.core.security import current_active_user
 
 router = APIRouter()
 
@@ -99,7 +100,11 @@ async def update_user(
 
 
 @router.delete("/{user_id}/")
-async def deactivate_user(user_id: UUID, db: AsyncSession = Depends(get_db_session)):
+async def deactivate_user(
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db_session),
+    _current_user=Depends(current_active_user),
+):
     """
     Deactivate a user instead of deleting.
     """
@@ -109,6 +114,12 @@ async def deactivate_user(user_id: UUID, db: AsyncSession = Depends(get_db_sessi
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    if _current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only deactivate your own account.",
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
