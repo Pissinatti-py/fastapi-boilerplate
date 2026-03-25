@@ -7,7 +7,8 @@ from src.services.users.validators import validate_password
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    pass
+
+    username: str
 
 
 class UserCreate(schemas.BaseUserCreate):

@@ -3,7 +3,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.security import current_active_user
 from src.db.managers.models.user_manager import UserRepository
 from src.db.session import get_db_session
 from src.schemas.core.user import UserRead, UserUpdate
