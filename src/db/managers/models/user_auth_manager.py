@@ -2,11 +2,9 @@ import uuid
 from typing import Optional
 
 from fastapi import Depends
-from fastapi_users import BaseUserManager, UUIDIDMixin
-from fastapi_users.models import UP
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_users import exceptions, models
-
+from fastapi_users import BaseUserManager, UUIDIDMixin, exceptions, models
+from fastapi_users.models import UP
 
 from src.core.settings import settings
 from src.db.user_database import get_user_db
@@ -14,7 +12,6 @@ from src.models.core.user import User
 
 
 class UserAuthManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
-
     reset_password_token_secret = settings.SECRET_KEY
 
     verification_token_secret = settings.SECRET_KEY
@@ -58,6 +55,7 @@ class UserAuthManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             await self.user_db.update(user, {"hashed_password": updated_password_hash})
 
         return user
+
 
 async def get_user_auth_manager(user_db=Depends(get_user_db)):
     yield UserAuthManager(user_db)
