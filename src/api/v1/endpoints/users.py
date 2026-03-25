@@ -1,38 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from src.db.session import get_db_session
-from src.schemas.core.user import UserCreate, UserRead, UserUpdate
-from src.db.utils.models.user_manager import user_manager
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.security import current_active_user
+from src.db.session import get_db_session
+from src.db.managers.models.user_manager import user_manager
+from src.schemas.core.user import UserRead, UserUpdate
 
 router = APIRouter()
-
-
-@router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def create_user(
-    user: UserCreate,
-    db: AsyncSession = Depends(get_db_session),
-):
-    """
-    Create a new user with validation for unique email and username.
-    """
-    if await user_manager.exists_by_field(db, "email", user.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or Username is already registered.",
-        )
-
-    # Check if username already exists
-    if await user_manager.exists_by_field(db, "username", user.username):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or Username is already registered.",
-        )
-
-    # Create user using manager
-    return await user_manager.create(db, user)
 
 
 @router.get("/", response_model=List[UserRead])
@@ -41,15 +17,21 @@ async def list_users(
     limit: int = Query(100, ge=1, le=1000),
     active_only: bool = Query(True, description="Filter only active users"),
     db: AsyncSession = Depends(get_db_session),
+    _current_user=Depends(current_active_user),
 ):
     """
-    Retrieve a list of users with optional filtering.
+    List users with pagination and optional filtering for active users.
 
-    Args:
-        skip: Number of records to skip (pagination)
-        limit: Maximum number of records to return
-        active_only: Filter only active users
-        db: Database session
+    :param skip: Number of records to skip for pagination, defaults to Query(0, ge=0)
+    :type skip: int, optional
+    :param limit: Maximum number of records to return, defaults to Query(100, ge=1, le=1000)
+    :type limit: int, optional
+    :param active_only: Whether to filter only active users, defaults to Query(True)
+    :type active_only: bool, optional
+    :param db: Database session dependency, defaults to Depends(get_db_session)
+    :type db: AsyncSession, optional
+    :return: List of users matching the criteria
+    :rtype: List[UserRead]
     """
     if active_only:
         return await user_manager.get_active_users(db, skip, limit)
