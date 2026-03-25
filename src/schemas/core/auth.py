@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, field_validator
 from typing import Annotated
 
-from src.services.users.validators import validate_username, validate_password
+from pydantic import BaseModel, Field, field_validator
+
+from src.services.users.validators import validate_password, validate_username
 
 
 class LoginRequest(BaseModel):
