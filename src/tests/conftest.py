@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from src.main import app
 from src.db.session import get_db_session
+from src.main import app
 from src.tests.test_db import (
     TestSessionLocal,
     setup_test_database,
