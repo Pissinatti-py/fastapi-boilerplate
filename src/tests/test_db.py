@@ -1,15 +1,15 @@
-import asyncpg
 import os
 import subprocess
+
+import asyncpg
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
 
 from src.core.settings import settings
 from src.services.logger_service import logger
-
 
 DB_USER = os.getenv("POSTGRES_USER", "postgres")
 DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")

@@ -1,12 +1,11 @@
-import asyncio
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from src.core.settings import settings
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.v1.endpoints.auth import auth_router
 from src.api.v1.router import api_router
-from src.api.v1.endpoints.auth import router as auth_router
-from src.db.session import run_migrations_sync
+from src.core.settings import settings
 from src.services.logger_service import logger
 
 
@@ -27,8 +26,6 @@ async def lifespan(app: FastAPI):
     :rtype: None
     """
     logger.info("🚀 Application is starting...")
-
-    await asyncio.to_thread(run_migrations_sync)
 
     yield
 
@@ -68,11 +65,7 @@ def get_application() -> FastAPI:
 
     # Include API routes
     app.include_router(api_router, prefix=settings.API_PREFIX)
-    app.include_router(
-        auth_router,
-        prefix="/api/auth",
-        tags=["Authentication"],
-    )
+    app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 
     return app
 

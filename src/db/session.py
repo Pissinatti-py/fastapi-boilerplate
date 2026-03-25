@@ -1,16 +1,13 @@
-from alembic import command
-from alembic.config import Config
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
-from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.settings import settings
 from src.db.base import Base
 from src.services.logger_service import logger
-
 
 DATABASE_URL = settings.DATABASE_URL
 
@@ -54,19 +51,3 @@ async def drop_database():
     except SQLAlchemyError as e:
         logger.error(f"❌ Error dropping database: {e}")
         raise
-
-
-def run_migrations_sync():
-    logger.info("🚧 Running migrations...")
-
-    alembic_cfg = Config("alembic.ini")
-    alembic_cfg.set_main_option("script_location", "src/migrations")
-
-    try:
-        command.upgrade(alembic_cfg, "head")
-        logger.info("✅ Migrations applied successfully.")
-    except Exception as e:
-        logger.error(f"❌ Migration failed: {e}")
-        raise e
-
-    logger.info("✅ Alembic migrations applied successfully.")

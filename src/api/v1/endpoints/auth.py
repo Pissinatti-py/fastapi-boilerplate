@@ -1,73 +1,52 @@
-from datetime import datetime
-from fastapi import APIRouter, HTTPException, status, Depends, Header
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_users.exceptions import UserNotExists
 
-from src.services.auth.authentication_service import AuthenticationService
-from src.schemas.core.auth import LoginRequest
-from src.schemas.auth.token_response_schema import TokenResponse
-from src.db.session import get_db_session
-from src.db.utils.models.user_manager import user_manager
+from src.core.security import auth_backend
+from src.db.managers.models.user_auth_manager import get_user_auth_manager
+from src.schemas.auth.login_request import LoginRequest
+from src.schemas.core.user import UserCreate, UserRead
 
-
-router = APIRouter()
+auth_router = APIRouter()
 
 
-@router.post("/login/")
+@auth_router.post("/login")
 async def login(
     credentials: LoginRequest,
-    db: AsyncSession = Depends(get_db_session),
+    user_manager=Depends(get_user_auth_manager),
 ):
-    user = await user_manager.get_by_field(
-        db, "username", credentials.username
-    )
+    user = await user_manager.authenticate(credentials)
 
-    if not user:
+    if user is None or not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="LOGIN_BAD_CREDENTIALS",
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-        )
+    strategy = auth_backend.get_strategy()
+    token = await strategy.write_token(user)
 
-    if not user.check_password(credentials.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-        )
-
-    user_data = {
-        "sub": user.email,
-        "user_id": user.id,
-        "username": user.username,
-        "is_active": user.is_active,
-        "is_superuser": user.is_superuser,
-        "token_family": f"user_{user.id}_{int(datetime.now().timestamp())}",
-    }
-
-    # Create token pair
-    auth_service = AuthenticationService()
-    token_pair = auth_service.create_token_pair(user_data)
-
-    return TokenResponse(**token_pair.to_dict())
+    return await auth_backend.transport.get_login_response(token)
 
 
-@router.get("/check-token/")
-async def check_token(
-    db: AsyncSession = Depends(get_db_session),
-    authorization: str = Header(None)
+@auth_router.post("/register", response_model=UserRead)
+async def register(
+    user_create: UserCreate,
+    user_manager=Depends(get_user_auth_manager),
 ):
-    """
-    Endpoint to check if the token is valid.
-    This is a placeholder implementation.
-    """
-    # For now, return True (placeholder implementation)
-    print(f"Authorization header: {authorization}")
-    auth_service = AuthenticationService()
-    response = auth_service.verify_token(authorization)
-    print(f"Token verification response: {response}")
+    try:
+        existing_user = await user_manager.get_by_email(user_create.email)
+    except UserNotExists:
+        existing_user = None
 
-    return {"valid": True}
+    if existing_user is None:
+        existing_user = await user_manager.get_by_username(user_create.username)
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GENERIC_ERROR",
+        )
+
+    user = await user_manager.create(user_create)
+
+    return UserRead.model_validate(user)

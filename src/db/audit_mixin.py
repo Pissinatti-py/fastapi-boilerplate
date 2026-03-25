@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import declared_attr
 

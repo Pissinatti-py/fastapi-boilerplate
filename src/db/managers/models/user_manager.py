@@ -1,39 +1,25 @@
-from fastapi import HTTPException, status
 from typing import Optional
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.utils.base_manager import BaseManager
-from src.models.core.user import User
+from src.db.managers.base_manager import BaseManager
+from src.models.core.user import User  # noqa: model-only import
 from src.schemas.core.user import UserCreate, UserRead
-from src.utils.security import get_password_hash
 
 
-class UserManager(BaseManager[User, UserCreate, UserRead]):
+class UserRepository(BaseManager[User, UserCreate, UserRead]):
     """
-    User-specific CRUD manager with additional methods.
+    User-specific CRUD repository with additional methods.
 
     Extends the base BaseManager with user-specific operations.
     """
 
     def __init__(self):
-        super().__init__(User)
-
-    async def create(self, db: AsyncSession, user_in: UserCreate) -> User:
         """
-        Create a new user with password hashing.
-
-        Args:
-            db: Database session
-            user_in: User creation data
-
-        Returns:
-            The created user instance
+        Initialize the UserRepository with the User model.d
         """
-        # Hash the password
-        user_data = user_in.model_dump(exclude_unset=True)
-        user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
-
-        return await super().create(db, user_data)
+        super().__init__(model=User)
 
     async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
         """Get user by email address."""
@@ -67,7 +53,3 @@ class UserManager(BaseManager[User, UserCreate, UserRead]):
     async def activate_user(self, db: AsyncSession, user_id: int) -> Optional[User]:
         """Activate a user."""
         return await self.update(db, user_id, {"is_active": True})
-
-
-# Create a global instance to use throughout the application
-user_manager = UserManager()

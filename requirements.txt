@@ -2,21 +2,14 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.2
 pydantic-settings==2.9.1
 
-# Banco de Dados
 sqlalchemy==2.0.41
-psycopg2-binary==2.9.9
-asyncpg==0.29.0  # Driver async para PostgreSQL
+psycopg2-binary==2.9.11
+asyncpg==0.31.0
 
-# Alembic para migrations
 alembic==1.16.1
 
-# Gerenciamento de variáveis de ambiente
 python-dotenv==1.0.1
 
-# Validação extra (se desejar)
-pydantic[email]==2.7.1
+# pydantic[email]==2.11.0
 
-# Segurança (JWT)
-python-jose==3.3.0
-passlib[bcrypt]==1.7.4
-bcrypt<4.1.0
+fastapi-users[sqlalchemy]==15.0.4
