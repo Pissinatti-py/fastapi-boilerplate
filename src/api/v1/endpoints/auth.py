@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_users.exceptions import UserNotExists
 
 from src.core.security import auth_backend
+from src.db.managers.models.user_auth_manager import get_user_auth_manager
 from src.schemas.auth.login_request import LoginRequest
 from src.schemas.core.user import UserCreate, UserRead
-from src.services.users.manager import get_user_manager
 
 auth_router = APIRouter()
 
@@ -12,7 +12,7 @@ auth_router = APIRouter()
 @auth_router.post("/login")
 async def login(
     credentials: LoginRequest,
-    user_manager=Depends(get_user_manager),
+    user_manager=Depends(get_user_auth_manager),
 ):
     user = await user_manager.authenticate(credentials)
 
@@ -31,12 +31,15 @@ async def login(
 @auth_router.post("/register", response_model=UserRead)
 async def register(
     user_create: UserCreate,
-    user_manager=Depends(get_user_manager),
+    user_manager=Depends(get_user_auth_manager),
 ):
     try:
         existing_user = await user_manager.get_by_email(user_create.email)
     except UserNotExists:
         existing_user = None
+
+    if existing_user is None:
+        existing_user = await user_manager.get_by_username(user_create.username)
 
     if existing_user:
         raise HTTPException(
