@@ -49,8 +49,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         request_count = results[2]
         remaining = max(0, self.max_requests - request_count)
-        print(f"IP {client_ip} has made {request_count} requests in the last {self.window_seconds} seconds.")
-        print(f"Remaining requests for IP {client_ip}: {remaining}")
 
         if request_count > self.max_requests:
             return JSONResponse(
