@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
-from jose import JWTError, jwt
+
+# from jose import JWTError, jwt
 from enum import Enum
+from typing import Any, Dict, Optional
 
 from src.core.settings import settings
 
@@ -153,9 +154,7 @@ class AuthenticationService:
             TokenPair: Object containing both tokens and metadata
         """
         # Create access token with full user data
-        access_token = self.create_access_token(
-            user_data, access_expires_delta
-        )
+        access_token = self.create_access_token(user_data, access_expires_delta)
 
         # Create refresh token with minimal data (security best practice)
         refresh_data = {
@@ -166,20 +165,14 @@ class AuthenticationService:
             ),  # For token rotation
         }
 
-        refresh_token = self.create_refresh_token(
-            refresh_data, refresh_expires_delta
-        )
+        refresh_token = self.create_refresh_token(refresh_data, refresh_expires_delta)
 
         # Calculate expiration times in seconds
         access_expires_in = (
-            access_expires_delta or timedelta(
-                minutes=self.access_token_expire_minutes
-            )
+            access_expires_delta or timedelta(minutes=self.access_token_expire_minutes)
         ).total_seconds()
         refresh_expires_in = (
-            refresh_expires_delta or timedelta(
-                days=self.refresh_token_expire_days
-            )
+            refresh_expires_delta or timedelta(days=self.refresh_token_expire_days)
         ).total_seconds()
 
         return TokenPair(
@@ -210,11 +203,7 @@ class AuthenticationService:
         try:
             token = token.split(" ")[1] if " " in token else token
 
-            payload = jwt.decode(
-                token,
-                self.secret_key,
-                algorithms=[self.algorithm]
-            )
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
 
             if expected_type:
                 token_type = payload.get("token_type")
@@ -228,12 +217,7 @@ class AuthenticationService:
             return payload
 
         except IndexError:
-            raise ValueError(
-                "Invalid token format. Expected 'Bearer <token>' format."
-            )
-
-        except JWTError as e:
-            raise ValueError(f"Token verification failed: {str(e)}")
+            raise ValueError("Invalid token format. Expected 'Bearer <token>' format.")
 
     def refresh_access_token(
         self, refresh_token: str, additional_data: Optional[dict] = None
